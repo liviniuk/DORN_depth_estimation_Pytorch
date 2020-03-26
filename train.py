@@ -5,10 +5,12 @@ from data import get_dataloaders
 from loss import OrdinalLoss
 from lr_decay import PolynomialLRDecay
 from discritization import SID
-from metrics import AverageMeter, Result
+from progress_tracking import AverageMeter, Result, ImageBuilder
 from tensorboardX import SummaryWriter
 from datetime import datetime
 import os, socket
+
+LOG_IMAGES = 3 # number of images per epoch to log with tensorboard
 
 # Parse arguments
 parser = argparse.ArgumentParser(description='DORN depth estimation in PyTorch')
@@ -32,11 +34,13 @@ lr_decay = PolynomialLRDecay(optimizer, args.epochs, args.lr * 1e-2)
 criterion = OrdinalLoss()
 sid = SID(args.dataset)
 
-# Create Logger
-average_meter = AverageMeter()
+# Create logger
 log_dir = os.path.join(os.path.abspath(os.getcwd()), 'logs', datetime.now().strftime('%b%d_%H-%M-%S_') + socket.gethostname())
 os.makedirs(log_dir)
 logger = SummaryWriter(log_dir)
+# Log arguments
+with open(os.path.join(log_dir, "args.txt"), "a") as f:
+    print(args, file=f)
 
 for epoch in range(args.epochs):
     # log learning rate
@@ -45,7 +49,8 @@ for epoch in range(args.epochs):
         
     print('Epoch', epoch, 'train in progress...')
     model.train()
-    average_meter.reset()
+    average_meter = AverageMeter()
+    image_builder = ImageBuilder()
     for i, (input, target) in enumerate(train_loader):
         input, target = input.cuda(), target.cuda()
         
@@ -61,15 +66,20 @@ for epoch in range(args.epochs):
         result = Result()
         result.evaluate(depth.data, target.data)
         average_meter.update(result, input.size(0))
-        
-    lr_decay.step()
+        if i <= LOG_IMAGES:
+            image_builder.add_row(input[0,:,:,:], target[0,:,:], depth[0,:,:])
         
     # log performance scores with tensorboard
     average_meter.log(logger, epoch, 'Train')
+    if LOG_IMAGES:
+        logger.add_image('Train/Image', image_builder.get_image(), epoch)
+
+    lr_decay.step()
         
     print('Epoch', epoch, 'test in progress...')
     model.eval()
-    average_meter.reset()
+    average_meter = AverageMeter()
+    image_builder = ImageBuilder()
     for i, (input, target) in enumerate(val_loader):
         input, target = input.cuda(), target.cuda()
 
@@ -81,9 +91,13 @@ for epoch in range(args.epochs):
         result = Result()
         result.evaluate(pred.data, target.data)
         average_meter.update(result, input.size(0))
+        if i <= LOG_IMAGES:
+            image_builder.add_row(input[0,:,:,:], target[0,:,:], pred_labels[0,:,:])
     
     # log performance scores with tensorboard
     average_meter.log(logger, epoch, 'Test')
+    if LOG_IMAGES:
+        logger.add_image('Test/Image', image_builder.get_image(), epoch)
     
     print()
     
