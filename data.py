@@ -1,17 +1,16 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as T
+import torchvision.transforms.functional as TF
 from PIL import Image
 import numpy as np
 import h5py
 import os
+import random
 
 
 class NYUDataset(Dataset):
     def __init__(self, root, type):
-        self.raw_size = (480, 640)
-        self.output_size = (257, 353)
-        
         self.classes, self.class_to_idx = self.find_classes(root)
         self.imgs = self.make_dataset(root, self.class_to_idx)
         assert len(self.imgs) > 0, "Found 0 images in subfolders of: " + root + "\n"
@@ -47,25 +46,36 @@ class NYUDataset(Dataset):
         """
         Train data augmentation. For details see the DORN paper.
         """
-        s = np.random.uniform(1.0, 1.5)  # random scaling factor
-
-        # data augmentations
-        transform = T.Compose([
-            T.Resize((288, 384)),  # for computational efficiency
-            T.RandomRotation(5),
-            T.Resize(round(288 * s)),
-            T.RandomCrop((257, 353)),
-            T.RandomHorizontalFlip()
-        ])
-        color_jitter = T.ColorJitter(0.4, 0.4, 0.4) # only for RGB
-        to_tensor = T.ToTensor()
-
-        rgb = transform(rgb)
+        # Resize for computational efficiency
+        rgb = TF.resize(rgb, size=(288, 384))
+        depth = TF.resize(depth, size=(288, 384))
+        
+        # Random rotation
+        angle = T.RandomRotation.get_params(degrees=(-5,5))
+        rgb = TF.rotate(rgb, angle)
+        depth = TF.rotate(depth, angle)
+        
+        # Random scaling
+        s = np.random.uniform(1.0, 1.5)  
+        rgb = TF.resize(rgb, size=round(288 * s))
+        depth = TF.resize(depth, size=round(288 * s))
+        
+        # Random crop
+        i, j, h, w = T.RandomCrop.get_params(rgb, output_size=(257, 353))
+        rgb = TF.crop(rgb, i, j, h, w)
+        depth = TF.crop(depth, i, j, h, w)
+        
+        # Random horizontal flipping
+        if random.random() > 0.5:
+            rgb = TF.hflip(rgb)
+            depth = TF.hflip(depth)
+        
+        color_jitter = T.ColorJitter(0.4, 0.4, 0.4)
         rgb = color_jitter(rgb)
-        rgb = to_tensor(rgb)
-
-        depth = transform(depth)
-        depth = to_tensor(depth)
+        
+        rgb = TF.to_tensor(rgb)
+        depth = TF.to_tensor(depth)
+        
         depth /= s # preserves world-space geometry of the scene
 
         return rgb, depth
