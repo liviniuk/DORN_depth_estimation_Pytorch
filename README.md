@@ -2,17 +2,13 @@
 
 This is an unoficial Pytorch implementation of [Deep Ordinal Regression Network for Monocular Depth Estimation](http://arxiv.org/abs/1806.02446) paper by Fu et. al.
 
-The implementation closely follows the paper and the [official repo](https://github.com/hufu6371/DORN). The list of known differences:
- - Only training on the labeled part of NYU V2 is currently implemented (not the whole raw data and Eigen's split as in the paper).
- - ColorJitter is used instead of the color transformation from the Eigen paper.
- - Feature extractor is pretrained on a different dataset.
+Table. Performance on NYU V2. 
+|    Source     |      δ1       |      δ2       |      δ3       |      rel      |     log10     |      rms      |
+| ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |
+|Original paper*| 0.828         | 0.965         | 0.992         | 0.115         | 0.051         | 0.509         |
+| This repo*    | 0.806         | 0.957         | 0.989         | 0.151         | 0.062         | 0.586         |
 
-## Requirements
-
- - Python 3
- - Pytorch (version 1.3 tested)
- - Torchvision
- - Tensorboard
+*Note, that the data splits are different (see Known Differences below for details). The worse performance might be due to the smaller training set (795 vs about 120K images).
 
 ## How to use
 
@@ -48,10 +44,22 @@ To monitor training, use Tensorboard:
   tensorboard --logdir ./logs/
   ```
 
+## Known Differences
+The implementation closely follows the paper and the [official repo](https://github.com/hufu6371/DORN) with some exceptions. The list of known differences:
+ - Only training on the labeled part of NYU V2 is currently implemented (not on all the raw data).
+ - ColorJitter is used instead of the color transformation from the Eigen's paper.
+ - Feature extractor is pretrained on a different dataset.
 
 ## Pretrained feature extractor
 
 DORN uses a modified version of ResNet-101 as a feature extractor (with dilations and three 3x3 convolutional layers in the begining instead of one 7x7 layer). If you select pretrained=True, weights pretrained on MIT ADE20K dataset will be loaded from [this project](https://github.com/CSAILVision/semantic-segmentation-pytorch). This is different from the paper (the authors suggest pretraining on ImageNet). That is the only suitable pretrained model on the Web that I am aware of.
+
+## Requirements
+
+ - Python 3
+ - Pytorch (version 1.3 tested)
+ - Torchvision
+ - Tensorboard
 
 ## Acknowledgements
 
