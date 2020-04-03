@@ -7,8 +7,8 @@ class SID:
             alpha = 0.001
             beta = 80.0
         elif dataset == 'nyu':
-            alpha = 0.02
-            beta = 10.0
+            alpha = 0.7113
+            beta = 9.9955
         
         K = 80.0
             
