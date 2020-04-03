@@ -92,7 +92,7 @@ for epoch in range(args.epochs):
         result.evaluate(pred.data, target.data)
         average_meter.update(result, input.size(0))
         if i <= LOG_IMAGES:
-            image_builder.add_row(input[0,:,:,:], target[0,:,:], pred_labels[0,:,:])
+            image_builder.add_row(input[0,:,:,:], target[0,:,:], pred[0,:,:])
     
     # log performance scores with tensorboard
     average_meter.log(logger, epoch, 'Test')
