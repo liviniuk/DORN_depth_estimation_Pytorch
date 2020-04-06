@@ -12,9 +12,11 @@ Table. Performance on NYU V2.
 
 ## How to use
 
+These steps show how to run the code on the official split of the NYU V2 depth dataset.
+
 To prepare data:
- - Download data and [nyu_depth_v2_labeled.mat](http://horatio.cs.nyu.edu/mit/silberman/nyu_depth_v2/nyu_depth_v2_labeled.mat) and [splits.mat](http://horatio.cs.nyu.edu/mit/silberman/indoor_seg_sup/splits.mat).
- - Edit create_nyu_h5.py to add data_path and output_path.
+ - Download [nyu_depth_v2_labeled.mat](http://horatio.cs.nyu.edu/mit/silberman/nyu_depth_v2/nyu_depth_v2_labeled.mat) (data) and [splits.mat](http://horatio.cs.nyu.edu/mit/silberman/indoor_seg_sup/splits.mat).
+ - Edit create_nyu_h5.py to add data_path (folder with the .mat files from previous step) and output_path.
  - Run:
   ```bash
   python create_nyu_h5.py
